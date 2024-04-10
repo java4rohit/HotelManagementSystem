@@ -1,0 +1,97 @@
+#
+#eureka:
+#  instance:
+#    prefer-ip-address: true
+#  client:
+#    fetch-registry: true
+#    register-with-eureka: true
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
+
+
+server:
+  port: 8081
+
+spring:
+  application:
+    name: USER-SERVICE
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/microservices
+    username: root
+    password: root
+  jpa:
+    database: mysql
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQL57Dialect
+    hibernate:
+      ddl-auto: update
+  data:
+    jpa:
+      repositories:
+        enabled: true
+  config:
+    import: configserver:http://localhost:8085
+  security:
+    oauth2:
+      resourceServer:
+        jwt:
+         issuer-uri: https://dev-41558616.okta.com/oauth2/default
+      client:
+        registration:
+           my-internal-client:
+            provider: okta
+            authorizationGrantType: client_credentials
+            scope: internal
+            clientId: 0oag8n4e56PYd5OvC5d7
+            clientSecret: XWiTC3qJv02xVTEpJLenr8GUI2mmDOiFgWBAv0GmcWbls3Il_VBUAOzIsVAEVW66
+        provider:
+          okta:
+            issuerUri: https://dev-41558616.okta.com/oauth2/default
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      ratingHotelBreaker:
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+
+
+  retry:
+    instances:
+      ratingHotelBreaker:
+        maxAttempts: 10
+        waitDuration: 5s
+
+  ratelimiter:
+    instances:
+      userRateLimiter:
+        limitRefreshPeriod: 4s
+        limitForPeriod: 2
+        timeoutDuration: 0
+
+
+okta:
+  oauth2:
+    issuer: https://dev-41558616.okta.com/oauth2/default
+    audience: api://default
